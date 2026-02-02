@@ -1,41 +1,23 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink, Heart, Phone, MapPin } from 'lucide-react';
 import { CardContent } from './types';
 
-/**
- * ============================================================
- * [ 📸 사진 교체 및 외부 배포 가이드 ]
- * ============================================================
- * 네이버 블로그 등에 올린 사진 주소는 외부에서 차단될 수 있습니다.
- * 안정적인 배포를 위해 아래 방법을 권장합니다.
- * 
- * 1. https://postimages.org/ 접속
- * 2. 사진 업로드 후 [직접 링크] 또는 [Direct Link] 주소를 복사
- * 3. 아래 images 항목의 따옴표("") 안에 붙여넣기
- * ============================================================
- */
 const CARD_NEWS_CONFIG = {
-  // 1. 각 페이지별 사진 주소 (반드시 '직접 링크' 주소를 사용하세요)
   images: {
     page1: "https://i.postimg.cc/258FFbTj/photo1.jpg",
     page2: "https://i.postimg.cc/ncGDRVXK/photo2.jpg",
     page3: "https://i.postimg.cc/LXPqzmdk/photo3.png",
     page4: "https://i.postimg.cc/WbTDkR5c/photo4.jpg",
-    page5: "https://i.postimg.cc/QdnVwFhT/photo5.jpg", // 카카오 공유 대표 이미지로 사용됨
+    page5: "https://i.postimg.cc/QdnVwFhT/photo5.jpg",
   },
-  
-  // 2. 버튼 클릭 시 연결될 링크
   links: {
     donation: "https://www.ihappynanum.com/Nanum/B/KV58E5SU28",
     homepage: "http://www.kongjon.or.kr/",
     taxBenefit: "http://www.kongjon.or.kr/4_1.php",
   },
-
-  // 3. 센터 기본 정보
   centerInfo: {
     name: "사회적협동조합 공존",
-    address: "사회적협동조합 공존 3층 22호",
+    address: "사회적협동조합 공존 부일로 232, 3층 22호",
     phone: "032-710-3650"
   }
 };
@@ -83,6 +65,8 @@ const CARDS: CardContent[] = [
 
 const App: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
 
   const nextSlide = () => {
     if (currentIndex < CARDS.length - 1) {
@@ -96,6 +80,27 @@ const App: React.FC = () => {
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) nextSlide();
+    if (isRightSwipe) prevSlide();
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   const currentCard = CARDS[currentIndex];
   const isLastPage = currentIndex === CARDS.length - 1;
 
@@ -105,18 +110,20 @@ const App: React.FC = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 overflow-hidden font-sans">
-      <div className="relative w-full max-w-md h-screen sm:h-[92vh] sm:rounded-[32px] bg-white shadow-2xl overflow-hidden flex flex-col select-none border border-gray-100">
+      <div 
+        className="relative w-full max-w-md h-screen sm:h-[92vh] sm:rounded-[32px] bg-white shadow-2xl overflow-hidden flex flex-col select-none border border-gray-100"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         
-        {/* 상단 이미지 영역 (45%) */}
+        {/* 상단 이미지 영역 */}
         <div className="relative h-[45%] overflow-hidden bg-gray-200">
           <img 
             key={currentCard.image}
             src={currentCard.image} 
             alt="카드 이미지" 
-            className="w-full h-full object-cover transition-opacity duration-700 ease-in-out opacity-100"
-            onError={(e) => {
-              e.currentTarget.src = "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1080&auto=format&fit=crop";
-            }}
+            className="w-full h-full object-cover transition-opacity duration-700"
           />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent backdrop-blur-[2px]"></div>
           
@@ -131,30 +138,16 @@ const App: React.FC = () => {
              ))}
           </div>
 
-          {/* 헤더 정보 */}
-          <div className="absolute top-8 left-6 right-6 z-10 flex justify-between items-center">
-            <div className="text-gray-800 font-bold text-[12px] tracking-tighter bg-white/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/50 shadow-sm">
-              {CARD_NEWS_CONFIG.centerInfo.name}
-            </div>
+          {/* 오른쪽 상단 페이지 표시 */}
+          <div className="absolute top-8 right-6 z-10">
             <div className="bg-black/10 backdrop-blur-md px-3 py-1 rounded-full text-black text-[10px] font-bold">
               {currentIndex + 1} / {CARDS.length}
             </div>
           </div>
         </div>
 
-        {/* 하단 문구 영역 (55%) */}
-        <div 
-          className="relative flex-1 flex flex-col px-8 pb-4 pt-2 cursor-pointer touch-none z-10 bg-white"
-          onClick={(e) => {
-             const { clientX, currentTarget } = e;
-             const { left, width } = currentTarget.getBoundingClientRect();
-             if (clientX - left < width * 0.25) {
-               prevSlide();
-             } else {
-               nextSlide();
-             }
-          }}
-        >
+        {/* 하단 문구 영역 */}
+        <div className="relative flex-1 flex flex-col px-8 pb-4 pt-2 bg-white">
           <div className="mb-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <span className="inline-block px-3 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[10px] font-bold tracking-tight border border-emerald-100 uppercase">
               {currentCard.keyword}
@@ -167,12 +160,12 @@ const App: React.FC = () => {
 
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
             {currentCard.subtitle && (
-              <p className="text-emerald-700 font-bold text-[15px] leading-relaxed tracking-tight border-l-3 border-emerald-500 pl-3">
+              <p className="text-emerald-700 font-bold text-[15px] leading-relaxed border-l-4 border-emerald-500 pl-3">
                 {currentCard.subtitle}
               </p>
             )}
             {currentCard.body && (
-              <p className="text-gray-600 text-[14px] sm:text-[15px] leading-[1.6] font-medium tracking-tight whitespace-pre-wrap">
+              <p className="text-gray-600 text-[14px] sm:text-[15px] leading-[1.6] font-medium whitespace-pre-wrap">
                 {currentCard.body}
               </p>
             )}
@@ -195,7 +188,7 @@ const App: React.FC = () => {
                 }}
                 className="w-full bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all py-5 rounded-2xl font-bold text-[18px] sm:text-[20px] flex items-center justify-center gap-3 shadow-lg shadow-emerald-100"
               >
-                <Heart className="w-6 h-6 fill-current" />
+                <Heart className="w-6 h-6 fill-current text-white" />
                 우리의 울타리 되어주기
               </button>
             </div>
@@ -248,14 +241,20 @@ const App: React.FC = () => {
             </div>
           )}
 
-          <div className="flex flex-col items-center gap-1.5 pt-2 border-t border-gray-100">
-             <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-600 font-bold whitespace-nowrap tracking-tight">
+          <div className="flex flex-col items-center gap-2 pt-1">
+             <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-700 font-bold whitespace-nowrap tracking-tighter">
                 <MapPin className="w-3.5 h-3.5 text-emerald-500" /> 
                 {CARD_NEWS_CONFIG.centerInfo.address}
              </div>
-             <div className="flex items-center justify-center gap-1 text-[10px] text-gray-400 font-medium">
-               <Phone className="w-3 h-3" /> {CARD_NEWS_CONFIG.centerInfo.phone}
-             </div>
+             
+             <a 
+               href={`tel:${CARD_NEWS_CONFIG.centerInfo.phone}`}
+               onClick={(e) => e.stopPropagation()}
+               className="flex items-center justify-center gap-2 px-6 py-2 bg-emerald-50 rounded-full text-[13px] text-emerald-700 font-black border border-emerald-100 hover:bg-emerald-100 transition-colors active:scale-95 shadow-sm"
+             >
+               <Phone className="w-4 h-4 fill-emerald-700 text-emerald-700" /> 
+               전화 문의: {CARD_NEWS_CONFIG.centerInfo.phone}
+             </a>
           </div>
         </div>
       </div>
