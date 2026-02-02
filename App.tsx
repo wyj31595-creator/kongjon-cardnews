@@ -80,6 +80,7 @@ const App: React.FC = () => {
     }
   };
 
+  // 터치 스와이프 이벤트 핸들러
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
@@ -91,11 +92,10 @@ const App: React.FC = () => {
   const handleTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
     const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
+    const minSwipeDistance = 50;
 
-    if (isLeftSwipe) nextSlide();
-    if (isRightSwipe) prevSlide();
+    if (distance > minSwipeDistance) nextSlide(); // 왼쪽으로 밀면 다음
+    if (distance < -minSwipeDistance) prevSlide(); // 오른쪽으로 밀면 이전
 
     touchStartX.current = null;
     touchEndX.current = null;
@@ -138,7 +138,7 @@ const App: React.FC = () => {
              ))}
           </div>
 
-          {/* 오른쪽 상단 페이지 표시 */}
+          {/* 오른쪽 상단 페이지 번호 (좌측 텍스트 로고는 삭제됨) */}
           <div className="absolute top-8 right-6 z-10">
             <div className="bg-black/10 backdrop-blur-md px-3 py-1 rounded-full text-black text-[10px] font-bold">
               {currentIndex + 1} / {CARDS.length}
@@ -197,6 +197,7 @@ const App: React.FC = () => {
 
         {/* 푸터 영역 */}
         <div className="bg-gray-50/80 backdrop-blur-md p-6 border-t border-gray-100">
+          {/* 네비게이션 버튼 */}
           <div className="flex justify-between items-center mb-6">
             <button 
               onClick={(e) => { e.stopPropagation(); prevSlide(); }}
@@ -241,8 +242,9 @@ const App: React.FC = () => {
             </div>
           )}
 
+          {/* 주소 및 전화번호 (한 줄 표기 및 다이얼 연동) */}
           <div className="flex flex-col items-center gap-2 pt-1">
-             <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-700 font-bold whitespace-nowrap tracking-tighter">
+             <div className="flex items-center justify-center gap-1 text-[11px] text-gray-700 font-bold whitespace-nowrap tracking-tighter">
                 <MapPin className="w-3.5 h-3.5 text-emerald-500" /> 
                 {CARD_NEWS_CONFIG.centerInfo.address}
              </div>
